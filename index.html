@@ -493,6 +493,7 @@
             });
         }
 
+        let selectedNames = [];
         async function pickName() {
             const resultElement = document.getElementById('name-result');
             let names;
@@ -515,7 +516,15 @@
                     return;
                 }
 
-                const result = await animatePicking(resultElement, names);
+                const remainingNames = names.filter(name => !selectedNames.includes(name));
+
+                if (remainingNames.length === 0) {
+                    alert('모든 이름이 이미 선택되었습니다');
+                    return;
+                }
+
+                const result = await animatePicking(resultElement, remainingNames);
+                selectedNames.push(result);
                 resultElement.textContent = `선택된 이름: ${result}`;
             } catch (error) {
                 alert(error);
