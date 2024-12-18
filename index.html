@@ -3,7 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>번호/이름 추첨기</title>
+
+    <!-- 기본 메타 태그 -->
+    <title>Weniv Draw | 위니브 추첨기</title>
+    <meta name="description" content="위니브 추첨기 입니다. 점심 추첨, 번호 추첨, 팀 편성 등에 사용할 수 있습니다.">
+
+    <!-- Open Graph 메타 태그 -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="위니브 추첨기 | Weniv Draw">
+    <meta property="og:description" content="손쉽게 추첨을 하세요.">
+    <meta property="og:image" content="https://draw.weniv.co.kr/og-image.png">
+    <meta property="og:url" content="https://draw.weniv.co.kr">
+    <meta property="og:site_name" content="Weniv Draw">
+    
+    <!-- Twitter 카드 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="위니브 추첨기 - 손쉬운 추첨 툴">
+    <meta name="twitter:description" content="손쉽게 추첨을 하세요.">
+    <meta name="twitter:image" content="https://draw.weniv.co.kr/og-image.png">
+    
+    <!-- 추가 메타 태그 -->
+    <meta name="keywords" content="위니브, weniv, 추첨기">
+    <meta name="author" content="Weniv">
+    <meta name="robots" content="index, follow">
+    
+    <!-- 캐노니컬 URL -->
+    <link rel="canonical" href="https://draw.weniv.co.kr">
+    
+    <!-- 파비콘 -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <script src="./asset/js/analytics.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -14,20 +45,26 @@
         body {
             font-family: 'Arial', sans-serif;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
             background-color: #f0f2f5;
             padding: 20px;
+            background-image: url(asset/img/2.png);
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #000648;
         }
 
         .container {
-            width: 100%;
-            max-width: 600px;
-            background: white;
+            /* 박스 투명도 조절 */
+            background: rgba(255, 255, 255, 0.8);
+            width: 600px;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            /* margin-bottom: 400px; */
         }
 
         .tab-container {
@@ -37,11 +74,17 @@
         }
 
         .tab {
+            flex: 1;
+            color: black;
             padding: 10px 20px;
             cursor: pointer;
             border: none;
             background: none;
             font-size: 16px;
+        }
+
+        .tab:hover {
+            color: white;
         }
 
         .tab.active {
@@ -90,27 +133,66 @@
         }
 
         .result {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            min-height: 100px;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            padding: 20px;
             border: 2px dashed #ddd;
             border-radius: 8px;
+            white-space: pre-wrap;
+        }
+
+        .team-result {
+            text-align: left;
         }
 
         @keyframes shuffle {
             0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
+            50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
 
         .shuffling {
             animation: shuffle 0.3s infinite;
             color: #007bff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .input-group input {
+            margin: 0;
+        }
+
+        /* 새로 추가된 스타일 */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .rank-result {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .rank-item {
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 18px;
         }
     </style>
 </head>
@@ -119,19 +201,35 @@
         <div class="tab-container">
             <button class="tab active" onclick="switchTab('number')">번호 추첨</button>
             <button class="tab" onclick="switchTab('name')">이름 추첨</button>
+            <button class="tab" onclick="switchTab('team')">팀 편성</button>
         </div>
 
         <div class="content">
             <div id="number-content" class="active">
-                <input type="number" id="total-number" min="1" placeholder="총 인원 수를 입력하세요">
-                <button onclick="pickNumber()">번호 추첨하기</button>
                 <div class="result" id="number-result">결과가 여기에 표시됩니다</div>
+                <input type="number" id="total-number" min="1" placeholder="총 인원 수를 입력하세요">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="show-rank">
+                    <label for="show-rank">순위 표시하기</label>
+                </div>
+                <input type="number" id="rank-count" min="1" placeholder="표시할 순위 수 (기본: 3)" style="display: none;">
+                <button onclick="pickNumber()">번호 추첨하기</button>
             </div>
 
             <div id="name-content">
+                <div class="result" id="name-result">결과가 여기에 표시됩니다</div>
                 <textarea id="name-list" placeholder="이름을 입력하세요 (엔터로 구분)"></textarea>
                 <button onclick="pickName()">이름 추첨하기</button>
-                <div class="result" id="name-result">결과가 여기에 표시됩니다</div>
+            </div>
+
+            <div id="team-content">
+                <div class="result team-result" id="team-result">결과가 여기에 표시됩니다</div>
+                <textarea id="team-names" placeholder="팀으로 나눌 이름들을 입력하세요 (엔터로 구분)"></textarea>
+                <div class="input-group">
+                    <input type="number" id="team-count" min="2" placeholder="팀 수를 입력하세요">
+                    <input type="text" id="team-prefix" placeholder="팀 이름 접두사 (예: 팀)" value="팀">
+                </div>
+                <button onclick="assignTeams()">팀 편성하기</button>
             </div>
         </div>
     </div>
@@ -141,7 +239,7 @@
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.content > div').forEach(content => content.classList.remove('active'));
             
-            const activeTab = document.querySelector(`.tab:${type === 'number' ? 'first-child' : 'last-child'}`);
+            const activeTab = document.querySelector(`.tab[onclick*="${type}"]`);
             const activeContent = document.getElementById(`${type}-content`);
             
             activeTab.classList.add('active');
@@ -162,8 +260,32 @@
             return values[Math.floor(Math.random() * values.length)];
         }
 
+        // 순위 표시 체크박스 이벤트 리스너
+        document.getElementById('show-rank').addEventListener('change', function() {
+            const rankCountInput = document.getElementById('rank-count');
+            rankCountInput.style.display = this.checked ? 'block' : 'none';
+        });
+
+        async function animatePicking(resultElement, values, duration = 2000) {
+            const startTime = Date.now();
+            resultElement.classList.add('shuffling');
+
+            while (Date.now() - startTime < duration) {
+                const randomValue = values[Math.floor(Math.random() * values.length)];
+                resultElement.textContent = typeof randomValue === 'object' ? 
+                    `${randomValue.rank}등: ${randomValue.number}번` : 
+                    randomValue;
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            resultElement.classList.remove('shuffling');
+            return values[Math.floor(Math.random() * values.length)];
+        }
+
         async function pickNumber() {
             const totalNumber = parseInt(document.getElementById('total-number').value);
+            const showRank = document.getElementById('show-rank').checked;
+            const rankCount = parseInt(document.getElementById('rank-count').value) || 3;
             const resultElement = document.getElementById('number-result');
 
             if (!totalNumber || totalNumber < 1) {
@@ -171,28 +293,100 @@
                 return;
             }
 
+            if (showRank && rankCount > totalNumber) {
+                alert('표시할 순위 수가 전체 인원수보다 많을 수 없습니다.');
+                return;
+            }
+
             const numbers = Array.from({length: totalNumber}, (_, i) => i + 1);
-            const result = await animatePicking(resultElement, numbers);
-            resultElement.textContent = `선택된 번호: ${result}번`;
+            shuffleArray(numbers);
+
+            if (showRank) {
+                resultElement.classList.add('rank-result');
+                let result = '추첨 결과:\n\n';
+                for (let i = 0; i < rankCount; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    result += `${i + 1}등: ${numbers[i]}번\n`;
+                    resultElement.textContent = result;
+                }
+            } else {
+                const result = await animatePicking(resultElement, numbers);
+                resultElement.textContent = `선택된 번호: ${result}번`;
+            }
         }
 
-        async function pickName() {
-            const nameText = document.getElementById('name-list').value.trim();
-            const resultElement = document.getElementById('name-result');
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
-            if (!nameText) {
-                alert('이름을 입력해주세요');
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        async function assignTeams() {
+            const namesText = document.getElementById('team-names').value.trim();
+            const teamCount = parseInt(document.getElementById('team-count').value);
+            const teamPrefix = document.getElementById('team-prefix').value.trim() || '팀';
+            const resultElement = document.getElementById('team-result');
+
+            if (!namesText) {
+                alert('팀원 이름을 입력해주세요');
                 return;
             }
 
-            const names = nameText.split('\n').filter(name => name.trim());
-            if (names.length === 0) {
-                alert('최소 한 명의 이름을 입력해주세요');
+            if (!teamCount || teamCount < 2) {
+                alert('2개 이상의 팀 수를 입력해주세요');
                 return;
             }
 
-            const result = await animatePicking(resultElement, names);
-            resultElement.textContent = `선택된 이름: ${result}`;
+            const names = namesText.split('\n').filter(name => name.trim());
+            if (names.length < teamCount) {
+                alert('팀 수보다 많은 인원을 입력해주세요');
+                return;
+            }
+
+            // 애니메이션 효과
+            resultElement.classList.add('shuffling');
+            for (let i = 0; i < 20; i++) {
+                const shuffledNames = [...names];
+                shuffleArray(shuffledNames);
+                const tempTeams = Array.from({ length: teamCount }, (_, i) => []);
+                shuffledNames.forEach((name, index) => {
+                    tempTeams[index % teamCount].push(name);
+                });
+                
+                let result = '팀 편성 결과:\n\n';
+                tempTeams.forEach((team, index) => {
+                    result += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
+                });
+                
+                resultElement.textContent = result;
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            resultElement.classList.remove('shuffling');
+
+            // 최종 결과
+            const shuffledNames = [...names];
+            shuffleArray(shuffledNames);
+            const teams = Array.from({ length: teamCount }, (_, i) => []);
+            shuffledNames.forEach((name, index) => {
+                teams[index % teamCount].push(name);
+            });
+
+            let result = '팀 편성 결과:\n\n';
+            teams.forEach((team, index) => {
+                result += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
+            });
+
+            resultElement.textContent = result;
         }
     </script>
 </body>
