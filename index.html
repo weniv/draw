@@ -194,6 +194,38 @@
             border-radius: 4px;
             font-size: 18px;
         }
+
+        .input-method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .method-button {
+            color: black;
+            flex: 1;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .method-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        .file-help {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .input-method {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -218,13 +250,33 @@
 
             <div id="name-content">
                 <div class="result" id="name-result">결과가 여기에 표시됩니다</div>
-                <textarea id="name-list" placeholder="이름을 입력하세요 (엔터로 구분)"></textarea>
+                <div class="input-method-selector">
+                    <button onclick="toggleInputMethod('text')" class="method-button active">텍스트 입력</button>
+                    <button onclick="toggleInputMethod('file')" class="method-button">CSV 파일</button>
+                </div>
+                <div id="text-input" class="input-method">
+                    <textarea id="name-list" placeholder="이름을 입력하세요 (엔터로 구분)"></textarea>
+                </div>
+                <div id="file-input" class="input-method" style="display: none;">
+                    <input type="file" id="csv-file" accept=".csv">
+                    <p class="file-help">CSV 파일 형식: 이름이 각 행에 하나씩 있어야 합니다.</p>
+                </div>
                 <button onclick="pickName()">이름 추첨하기</button>
             </div>
 
             <div id="team-content">
                 <div class="result team-result" id="team-result">결과가 여기에 표시됩니다</div>
-                <textarea id="team-names" placeholder="팀으로 나눌 이름들을 입력하세요 (엔터로 구분)"></textarea>
+                <div class="input-method-selector">
+                    <button onclick="toggleInputMethod('text', 'team')" class="method-button active">텍스트 입력</button>
+                    <button onclick="toggleInputMethod('file', 'team')" class="method-button">CSV 파일</button>
+                </div>
+                <div id="team-text-input" class="input-method">
+                    <textarea id="team-names" placeholder="팀으로 나눌 이름들을 입력하세요 (엔터로 구분)"></textarea>
+                </div>
+                <div id="team-file-input" class="input-method" style="display: none;">
+                    <input type="file" id="team-csv-file" accept=".csv">
+                    <p class="file-help">CSV 파일 형식: 이름이 각 행에 하나씩 있어야 합니다.</p>
+                </div>
                 <div class="input-group">
                     <input type="number" id="team-count" min="2" placeholder="팀 수를 입력하세요">
                     <input type="text" id="team-prefix" placeholder="팀 이름 접두사 (예: 팀)" value="팀">
@@ -332,61 +384,142 @@
         }
 
         async function assignTeams() {
-            const namesText = document.getElementById('team-names').value.trim();
             const teamCount = parseInt(document.getElementById('team-count').value);
             const teamPrefix = document.getElementById('team-prefix').value.trim() || '팀';
             const resultElement = document.getElementById('team-result');
+            let names;
 
-            if (!namesText) {
-                alert('팀원 이름을 입력해주세요');
-                return;
-            }
+            try {
+                const fileInput = document.getElementById('team-csv-file');
+                if (fileInput.style.display !== 'none' && fileInput.files.length > 0) {
+                    names = await readCSVFile(fileInput);
+                } else {
+                    const namesText = document.getElementById('team-names').value.trim();
+                    if (!namesText) {
+                        alert('팀원 이름을 입력하거나 CSV 파일을 선택해주세요');
+                        return;
+                    }
+                    names = namesText.split('\n').filter(name => name.trim());
+                }
 
-            if (!teamCount || teamCount < 2) {
-                alert('2개 이상의 팀 수를 입력해주세요');
-                return;
-            }
+                if (!teamCount || teamCount < 2) {
+                    alert('2개 이상의 팀 수를 입력해주세요');
+                    return;
+                }
 
-            const names = namesText.split('\n').filter(name => name.trim());
-            if (names.length < teamCount) {
-                alert('팀 수보다 많은 인원을 입력해주세요');
-                return;
-            }
+                if (names.length < teamCount) {
+                    alert('팀 수보다 많은 인원을 입력해주세요');
+                    return;
+                }
 
-            // 애니메이션 효과
-            resultElement.classList.add('shuffling');
-            for (let i = 0; i < 20; i++) {
+                // 애니메이션 효과
+                resultElement.classList.add('shuffling');
+                for (let i = 0; i < 20; i++) {
+                    const shuffledNames = [...names];
+                    shuffleArray(shuffledNames);
+                    const tempTeams = Array.from({ length: teamCount }, (_, i) => []);
+                    shuffledNames.forEach((name, index) => {
+                        tempTeams[index % teamCount].push(name);
+                    });
+                    
+                    let result = '팀 편성 결과:\n\n';
+                    tempTeams.forEach((team, index) => {
+                        result += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
+                    });
+                    
+                    resultElement.textContent = result;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // 최종 결과
                 const shuffledNames = [...names];
                 shuffleArray(shuffledNames);
-                const tempTeams = Array.from({ length: teamCount }, (_, i) => []);
+                const teams = Array.from({ length: teamCount }, (_, i) => []);
                 shuffledNames.forEach((name, index) => {
-                    tempTeams[index % teamCount].push(name);
+                    teams[index % teamCount].push(name);
                 });
-                
-                let result = '팀 편성 결과:\n\n';
-                tempTeams.forEach((team, index) => {
-                    result += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
+
+                let finalResult = '팀 편성 결과:\n\n';
+                teams.forEach((team, index) => {
+                    finalResult += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
                 });
-                
-                resultElement.textContent = result;
-                await new Promise(resolve => setTimeout(resolve, 100));
+
+                resultElement.classList.remove('shuffling');
+                resultElement.textContent = finalResult;
+
+            } catch (error) {
+                alert(error);
+                resultElement.classList.remove('shuffling');
             }
-            resultElement.classList.remove('shuffling');
+        }
 
-            // 최종 결과
-            const shuffledNames = [...names];
-            shuffleArray(shuffledNames);
-            const teams = Array.from({ length: teamCount }, (_, i) => []);
-            shuffledNames.forEach((name, index) => {
-                teams[index % teamCount].push(name);
+        // csv 파일 읽기
+        function toggleInputMethod(method, type = 'name') {
+            const prefix = type === 'team' ? 'team-' : '';
+            const textInput = document.getElementById(prefix + 'text-input');
+            const fileInput = document.getElementById(prefix + 'file-input');
+            const buttons = document.querySelectorAll(`#${type}-content .method-button`);
+            
+            buttons.forEach(button => button.classList.remove('active'));
+            if (method === 'text') {
+                textInput.style.display = 'block';
+                fileInput.style.display = 'none';
+                buttons[0].classList.add('active');
+            } else {
+                textInput.style.display = 'none';
+                fileInput.style.display = 'block';
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function readCSVFile(fileInput) {
+            return new Promise((resolve, reject) => {
+                const file = fileInput.files[0];
+                if (!file) {
+                    reject('파일을 선택해주세요.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const names = text.split(/\r?\n/).filter(name => name.trim());
+                    resolve(names);
+                };
+                reader.onerror = function() {
+                    reject('파일을 읽는 중 오류가 발생했습니다.');
+                };
+                reader.readAsText(file);
             });
+        }
 
-            let result = '팀 편성 결과:\n\n';
-            teams.forEach((team, index) => {
-                result += `${teamPrefix} ${index + 1}: ${team.join(', ')}\n`;
-            });
+        async function pickName() {
+            const resultElement = document.getElementById('name-result');
+            let names;
 
-            resultElement.textContent = result;
+            try {
+                const fileInput = document.getElementById('csv-file');
+                if (fileInput.style.display !== 'none' && fileInput.files.length > 0) {
+                    names = await readCSVFile(fileInput);
+                } else {
+                    const namesText = document.getElementById('name-list').value.trim();
+                    if (!namesText) {
+                        alert('이름을 입력하거나 CSV 파일을 선택해주세요');
+                        return;
+                    }
+                    names = namesText.split('\n').filter(name => name.trim());
+                }
+
+                if (names.length === 0) {
+                    alert('유효한 이름이 없습니다');
+                    return;
+                }
+
+                const result = await animatePicking(resultElement, names);
+                resultElement.textContent = `선택된 이름: ${result}`;
+            } catch (error) {
+                alert(error);
+            }
         }
     </script>
 </body>
