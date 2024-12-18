@@ -516,10 +516,14 @@
                     return;
                 }
 
-                const remainingNames = names.filter(name => !selectedNames.includes(name));
+                let remainingNames = names.filter(name => !selectedNames.includes(name));
 
                 if (remainingNames.length === 0) {
                     alert('모든 이름이 이미 선택되었습니다');
+                    selectedNames = [];
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                     return;
                 }
 
